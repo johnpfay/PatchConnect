@@ -16,7 +16,7 @@ import networkx as nx
 import DU_GraphTools99 as gt
 gp = arcgisscripting.create()
 
-def msg(msgText): print msgText; gp.AddMessage(msgText); return
+def msg(msgText): print (msgText); gp.AddMessage(msgText); return
 
 #--INPUT VARIABLES--
 edgeFile = sys.argv[1]
