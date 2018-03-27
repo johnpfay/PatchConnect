@@ -69,7 +69,7 @@ def edge_threshold_sequence(G, min_wt, max_wt, winc):
        for e in edges:
            (n1, n2, w) = e
            if w['weight'] <= wt:
-               tGw.add_edge(n1, n2, w)
+               tGw.add_edge(n1, n2, length=w)
        Gts[wt] = tGw
    return Gts
 
@@ -187,8 +187,8 @@ def x_eccentricity(G, v=None, sp=None, with_labels=False):
         try:
             assert len(length)==G.number_of_nodes()
         except:
-            raise nx.NetworkXError,\
-                  "Graph not connected: infinite path length"
+            raise (nx.NetworkXError,
+                  "Graph not connected: infinite path length")
             
         e[v]=max(length.values())
 
