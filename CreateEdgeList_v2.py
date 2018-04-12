@@ -51,7 +51,7 @@ arrList = []
 edgeList = []
 
 #Loop through each patch and compute its cost distance to all other patches
-for patchID in patchIDs[:5]:
+for patchID in patchIDs:
     arcpy.SetProgressorLabel("Patch {} of {}".format(patchID,steps))
 
     #Reclassify cost in source patch cells to zero
@@ -75,13 +75,20 @@ for patchID in patchIDs[:5]:
             edgeList.append((patchID, toID, lcd[arrPatch == toID].min()))
 
     #Add array to arrList
-    #arrList.append(lcd)
+    arrList.append(lcd)
     arcpy.SetProgressorPosition()
 
 #Write the edges to the edgeListFN
-msg("Saving edges to {}".format(edgeListFN))
+arcpy.SetProgressor("default", "Saving Edges to {}".format(edgeListFN))
 np.savetxt(edgeListFN,np.asarray(edgeList),
            comments='',
            delimiter=",", 
            fmt='%d,%d,%2.4f', 
            header=("From,To,Cost"))
+
+#Write out cost surface arrays
+arcpy.SetProgressor("default", "Stacking arrays")
+arrStack = np.stack(arrList)
+
+arcpy.SetProgressor("default", "Saving Cost Distance Arrays to {}".format(edgeListFN))
+np.save(edgeListFN.replace("csv","npy"),arrStack)
