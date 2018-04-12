@@ -20,17 +20,6 @@ def msg(txt):
     arcpy.AddMessage(txt)
     return
 
-'''#Get input datasets: Patches and CostSurface
-patchRaster = 'C:/Workspace/PronghornConnectivity/PronghornConnectivity.gdb/PatchCores'
-if not arcpy.Exists(patchRaster):
-    print("Cannot locate patch raster")
-
-costRaster = 'C:/Workspace/PronghornConnectivity/PronghornConnectivity.gdb/CostSurface'
-if not arcpy.Exists(costRaster):
-    print("Cannot locate cost surface raster")
-
-outRaster = 'C:/Workspace/PronghornConnectivity/PronghornConnectivity.gdb/CD{}'
-edgeListFN = 'C:/Workspace/PronghornConnectivity/Scratch/EdgeList2.csv'''
 
 #Get the spatial reference, extent, and lower left coordinates
 sr = arcpy.Describe(costRaster).spatialReference
@@ -52,13 +41,18 @@ arrCost = arcpy.RasterToNumPyArray(costRaster,
 patchIDs = np.unique(arrPatch).tolist()
 patchIDs.remove(-9999)
 
+#Initialize the progressor
+step = 0
+steps = len(patchIDs)
+arcpy.SetProgressor("step", "Computing Cost Distances...",step,steps,1)
+
 #Initialize the arrayList and edgeList lists
 arrList = []
 edgeList = []
 
 #Loop through each patch and compute its cost distance to all other patches
-for patchID in patchIDs:
-    msg("{}/{}".format(patchID,patchIDs[-1]))
+for patchID in patchIDs[:5]:
+    arcpy.SetProgressorLabel("Patch {} of {}".format(patchID,steps))
 
     #Reclassify cost in source patch cells to zero
     arrCostMod = arrCost.copy()
@@ -82,6 +76,7 @@ for patchID in patchIDs:
 
     #Add array to arrList
     #arrList.append(lcd)
+    arcpy.SetProgressorPosition()
 
 #Write the edges to the edgeListFN
 msg("Saving edges to {}".format(edgeListFN))
