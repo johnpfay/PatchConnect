@@ -10,7 +10,8 @@
 #-------------------------------------------------------------------------------------------
 # Updated for Python 3.5 (Spring 2018, John.Fay@duke.edu)
 
-import sys, os, arcpy
+import arcpy
+import pandas as pd
 import networkx as nx
 #import DU_GraphTools99 as gt
 # C:\check\PatchConnect\EdgeList.csv 300000 1500000 300000 C:\check\PatchConnect\GraphSummary.csv
@@ -18,7 +19,7 @@ import networkx as nx
 #--Messaging function--
 def msg(msgText): print (msgText); arcpy.AddMessage(msgText); return
 
-#--DLU Functions---
+#%% DLU Functions %%
 #   Assess graph connectivity in terms of a threshold distance (edge
 #   weight) or sequence of these, to look at how a graph connects
 #   as the threshold distance is systematically increased.
@@ -117,7 +118,7 @@ def graph_comp_sequence(Gts):
            diam = x_diameter(g)
        else:
            nc = nx.number_connected_components(g)
-           gc = max(nx.connected_component_subgraphs(g), key=len)# nx.connected_component_subgraphs(g)[0]
+           gc = G.subgraph(max(nx.connected_components(G), key=len)) #Updated to NX 2.4
            diam = x_diameter(gc)
        gcs[d] = (nc, diam)
        msg("{0}:\tnc={1}\tdiam={2:2.4f}".format(d,nc,diam))
@@ -233,7 +234,7 @@ def sensi_diameter(G):
     if nx.is_connected(G):
         d0 = x_diameter(G)
     else:
-        G0 = nx.connected_component_subgraphs(G) [0] # the largest subgraph
+        G0 = G.subgraph(max(nx.connected_components(G), key=len)) #Updated to NX 2.4
         d0 = x_diameter(G0)
         nc = nx.number_connected_components(G)	     # how many are there?
     
@@ -247,7 +248,7 @@ def sensi_diameter(G):
             dx = x_diameter(G)
             cuts = 0
         else:
-            Gx = nx.connected_component_subgraphs(G) [0]	# the biggest
+            Gx = G.subgraph(max(nx.connected_components(G), key=len)) #Updated to NX 2.4
             ncx = nx.number_connected_components(G)
             if nc == ncx:
                 cuts = 0
@@ -340,13 +341,23 @@ def _dijkstra_multisource(G, sources, weight, pred=None, paths=None,cutoff=None,
     # by the caller via the pred and paths objects passed as arguments.
     return dist
 
-    return _dijkstra(G, source, get_weight, cutoff=cutoff)
-#--INPUT VARIABLES--
-edgeFile = sys.argv[1]
-minThresh = int(sys.argv[2])
-maxThresh = int(sys.argv[3])
-threshInt = int(sys.argv[4])
-outFile = sys.argv[5]
+    #return _dijkstra(G, source, get_weight, cutoff=cutoff)
+
+#%%INPUT VARIABLES%%
+
+debug = True
+if debug:
+    edgeFile = "../S_guild/edge_list.csv" #sys.argv[1]
+    minThresh = 100  #int(sys.argv[2])
+    maxThresh = 1000 #int(sys.argv[3])
+    threshInt = 500  #int(sys.argv[4])
+    outFile = "../S_guild/graphsummary.csv" #sys.argv[5]
+else:
+    edgeFile = arcpy.GetParameterAsText(0)
+    minThresh = int(arcpy.GetParameterAsText(1))
+    maxThresh = int(arcpy.GetParameterAsText(2))
+    threshInt = int(arcpy.GetParameterAsText(3))
+    outFile = arcpy.GetParameterAsText(4)
 
 # Build graph from edgelist
 msg("Building graph from %s" %edgeFile)
@@ -370,6 +381,11 @@ msg("Creating thresholded graphs")
 gts = edge_threshold_sequence(G,minThresh,maxThresh,threshInt)
 msg("Calculating graph properties")
 gcs = graph_comp_sequence(gts)
+# Convert to dataframe
+df_gcs = pd.DataFrame(gcs).T
+plot1 = df_gcs[0].plot()
+plot2 = df_gcs[1].plot()
+
 msg("Writing data to %s" %outFile)
 write_graph_comp_sequence(gcs,outFile)
 
