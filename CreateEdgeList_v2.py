@@ -1,10 +1,7 @@
 #Import libraries
 import arcpy
-from arcpy.sa import *
 import numpy as np
-import pandas as pd
 from skimage import graph
-from matplotlib import pyplot as plt
 
 arcpy.env.overwriteOutput = True
 
