@@ -25,7 +25,6 @@
 
 # Import system modules
 import sys, arcpy, math
-import arcpy.sa as sa
 import networkx as nx
 
 # Check out any necessary licenses
@@ -134,4 +133,3 @@ for patchID in patchIDs:
 # Close the text file
 connAreaFileObj.close()
 
-arcpy.CheckInExtension("spatial")
