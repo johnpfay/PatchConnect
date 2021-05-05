@@ -27,26 +27,24 @@ from arcgis import GIS, GeoAccessor, geometry
 gis = GIS('home')
 
 # Get input datasets: Patches and CostSurface
-debug = True
+debug = False
 if debug:
     patchRaster = '..\\Data\\ENH_LCP_ModelInputs_Final2019.gdb\\S_Patches_60ha'
     orig_costRaster = '..\\Data\\ENH_LCP_ModelInputs_Final2019.gdb\\S_CostSurface'
     edgeListFN = '..\\Scratch\\edgelist4.csv'
     lcp_featureclass = edgeListFN.replace('.csv','.shp')
     arcpy.env.overwriteOutput = True
-    calc_lcps = True
+
 else:
     patchRaster = arcpy.GetParameterAsText(0)
     orig_costRaster = arcpy.GetParameterAsText(1)
     edgeListFN = arcpy.GetParameterAsText(2)
-    lcp_featureclass = edgeListFN.replace('.csv','.shp')
-    arcpy.SetParameterAsText(3,lcp_featureclass)
+    lcp_featureclass = arcpy.GetParameterAsText(3)
 
 # Subset the cost raster to match dimensions of the patch raster
 arcpy.env.cellSize = patchRaster
 arcpy.env.extent = patchRaster
 arcpy.env.snapRaster = patchRaster
-
 
 # Get the spatial reference, extent, and lower left coordinates
 sr = arcpy.Describe(patchRaster).spatialReference
@@ -97,9 +95,8 @@ steps = len(patchIDs)
 arcpy.SetProgressor("step", "Computing Cost Distances...",step,steps,1)
 
 #%% Loop through each patch and compute its cost distance to all other patches
-for patchID in patchIDs[:1]:
+for patchID in patchIDs:
     arcpy.SetProgressorLabel("Patch {} of {} ".format(patchID,steps))
-    print("\nPatch {} of {}".format(patchID,steps),end='')
 
     #Reclassify cost in source patch cells to zero & set no data to high cost
     arrCostMod = arrCost.copy()
@@ -131,7 +128,7 @@ for patchID in patchIDs[:1]:
             rowMin,colMin = np.where(cd_array == least_cost_distance)
             
             ###---IF LCP FEATURES ARE REQUESTED---
-            if calc_lcps:
+            if lcp_featureclass != "#":
                 #Step 2. Compute the least cost path (traceback) from this cell
                 lcp_coords = cost_graph.traceback((rowMin[0],colMin[0]))
                 #Step 3. Convert image coords to geographic coords
@@ -177,8 +174,8 @@ arcpy.SetProgressor("default", f"Saving Edges to {edgeListFN}")
 df_patches[['FROM_ID','TO_ID','COST']].to_csv(edgeListFN,float_format=("%2.4f"),index=False)
 
 #Write out cost surface arrays
-# arcpy.SetProgressor("default", "Stacking arrays")
-# arrStack = np.stack(costDistArrays)
+arcpy.SetProgressor("default", "Stacking arrays")
+arrStack = np.stack(costDistArrays)
 
-# arcpy.SetProgressor("default", "Saving Cost Distance Arrays to {}".format(edgeListFN))
-# np.save(edgeListFN.replace("csv","npy"),arrStack)
+arcpy.SetProgressor("default", "Saving Cost Distance Arrays to {}".format(edgeListFN))
+np.save(edgeListFN.replace("csv","npy"),arrStack)
