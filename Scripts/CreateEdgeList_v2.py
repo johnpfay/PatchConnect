@@ -29,28 +29,23 @@ gis = GIS('home')
 # Get input datasets: Patches and CostSurface
 debug = False
 if debug:
-    patchRaster = '..\\Data\\ENH_LCP_ModelInputs_Final2019.gdb\\S_Patches_60ha'
+    orig_patchRaster = '..\\Data\\ENH_LCP_ModelInputs_Final2019.gdb\\S_Patches_60ha'
     orig_costRaster = '..\\Data\\ENH_LCP_ModelInputs_Final2019.gdb\\S_CostSurface'
     edgeListFN = '..\\Scratch\\edgelist4.csv'
     lcp_featureclass = edgeListFN.replace('.csv','.shp')
     arcpy.env.overwriteOutput = True
 
 else:
-    patchRaster = arcpy.GetParameterAsText(0)
+    orig_patchRaster = arcpy.GetParameterAsText(0)
     orig_costRaster = arcpy.GetParameterAsText(1)
     edgeListFN = arcpy.GetParameterAsText(2)
     lcp_featureclass = arcpy.GetParameterAsText(3)
 
 # Subset the cost raster to match dimensions of the patch raster
-arcpy.env.cellSize = patchRaster
-arcpy.env.extent = patchRaster
-arcpy.env.snapRaster = patchRaster
+arcpy.env.cellSize = orig_patchRaster
+arcpy.env.extent = orig_patchRaster
+arcpy.env.snapRaster = orig_patchRaster
 
-# Get the spatial reference, extent, and lower left coordinates
-sr = arcpy.Describe(patchRaster).spatialReference
-cellSize = arcpy.Describe(patchRaster).meanCellWidth
-extent = arcpy.Describe(patchRaster).extent
-llCorner = extent.lowerLeft
 
 #%% FUNCTIONS
 
@@ -67,8 +62,15 @@ def to_xy(row,col):
     return [x_geom,y_geom]
 
 #%% Subset the cost raster to match the patch raster
-msg("Subsetting cost raster")
-costRaster = arcpy.sa.ExtractByRectangle(orig_costRaster, patchRaster, "INSIDE")
+msg("Subsetting rasters")
+costRaster = arcpy.sa.ExtractByRectangle(orig_costRaster, orig_patchRaster, "INSIDE")
+patchRaster= arcpy.sa.ExtractByRectangle(orig_patchRaster, costRaster, "INSIDE")
+
+#%% Get the spatial reference, extent, and lower left coordinates
+sr = arcpy.Describe(patchRaster).spatialReference
+cellSize = arcpy.Describe(patchRaster).meanCellWidth
+extent = arcpy.Describe(patchRaster).extent
+llCorner = extent.lowerLeft
 
 #%% Create arrays of the patch and core rasters
 msg("Converting rasters to NumPy arrays")
@@ -79,6 +81,11 @@ arrPatch = arcpy.RasterToNumPyArray(patchRaster,
 arrCost = arcpy.RasterToNumPyArray(costRaster,
                                    lower_left_corner=llCorner,
                                    nodata_to_value=-9999)
+
+#Check that arrays are the same size
+if arrPatch.shape != arrCost.shape:
+    msg("Input rasters must be of same size")
+    sys.exit[0]
 
 #%% Create a list of patchIDs
 patchIDs = np.unique(arrPatch).tolist()
@@ -96,7 +103,8 @@ arcpy.SetProgressor("step", "Computing Cost Distances...",step,steps,1)
 
 #%% Loop through each patch and compute its cost distance to all other patches
 for patchID in patchIDs:
-    arcpy.SetProgressorLabel("Patch {} of {} ".format(patchID,steps))
+    step += 1
+    arcpy.SetProgressorLabel("Patch {} of {} ".format(step,steps))
 
     #Reclassify cost in source patch cells to zero & set no data to high cost
     arrCostMod = arrCost.copy()
