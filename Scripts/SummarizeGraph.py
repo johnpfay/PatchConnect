@@ -12,8 +12,6 @@
 
 import sys, arcpy
 import networkx as nx
-#import DU_GraphTools99 as gt
-# C:\check\PatchConnect\EdgeList.csv 300000 1500000 300000 C:\check\PatchConnect\GraphSummary.csv
 
 #--Messaging function--
 def msg(msgText): print (msgText); arcpy.AddMessage(msgText); return
@@ -121,7 +119,7 @@ def graph_comp_sequence(Gts):
            gc = max(nx.connected_component_subgraphs(g), key=len)# nx.connected_component_subgraphs(g)[0]
            diam = x_diameter(gc)
        gcs[d] = (nc, diam)
-       if start_diam > diam:
+       if start_diam * 0.9 > diam:
            msg("{0}:\tnc={1}\tdiam={2:2.4f}***".format(d,nc,diam))
        else:
            msg("{0}:\tnc={1}\tdiam={2:2.4f}".format(d,nc,diam))
@@ -363,8 +361,8 @@ if (lineText.split(",")[0]).isalpha:
     lineText = edgeList.readline()
 while lineText:
     lineData = lineText.split(",")
-    u = int(lineData[0])
-    v = int(lineData[1])
+    u = int(float(lineData[0]))
+    v = int(float(lineData[1]))
     w = float(lineData[2][:-1])
     if w <= maxThresh:
         G.add_edge(u,v,weight = w)
