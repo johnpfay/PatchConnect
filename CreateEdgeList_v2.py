@@ -159,7 +159,7 @@ for patchID in patchIDs:
 #%% Clean up
 
 #Convert dataframe to spatial dataframe
-if calc_lcps:
+if lcp_featureclass != "#":
     arcpy.SetProgressor("default","Converting features to a spatial dataframe")
     print("Converting to spatial dataframe")
     sdf_patches = GeoAccessor.from_df(df_patches, geometry_column='geometry')
