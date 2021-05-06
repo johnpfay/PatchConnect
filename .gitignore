@@ -4,7 +4,7 @@ ImportLog/*
 Index/*
 
 #Ignore Geodatabases
-#PatchConnect.gdb
+PatchConnect.gdb
 
-#
+#Scratch
 
