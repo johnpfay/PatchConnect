@@ -81,6 +81,7 @@ arrPatch = arcpy.RasterToNumPyArray(patchRaster,
 arrCost = arcpy.RasterToNumPyArray(costRaster,
                                    lower_left_corner=llCorner,
                                    nodata_to_value=-9999)
+                                   
 
 #Check that arrays are the same size
 if arrPatch.shape != arrCost.shape:
@@ -136,7 +137,7 @@ for patchID in patchIDs:
             rowMin,colMin = np.where(cd_array == least_cost_distance)
             
             ###---IF LCP FEATURES ARE REQUESTED---
-            if lcp_featureclass != "#":
+            if lcp_featureclass:
                 #Step 2. Compute the least cost path (traceback) from this cell
                 lcp_coords = cost_graph.traceback((rowMin[0],colMin[0]))
                 #Step 3. Convert image coords to geographic coords
@@ -167,7 +168,7 @@ for patchID in patchIDs:
 #%% Clean up
 
 #Convert dataframe to spatial dataframe
-if lcp_featureclass != "#":
+if lcp_featureclass:
     arcpy.SetProgressor("default","Converting features to a spatial dataframe")
     print("Converting to spatial dataframe")
     sdf_patches = GeoAccessor.from_df(df_patches, geometry_column='geometry')
@@ -178,12 +179,12 @@ if lcp_featureclass != "#":
     sdf_patches.spatial.to_featureclass(lcp_featureclass)
 
 #Write the edges to the edgeListFN
-arcpy.SetProgressor("default", f"Saving Edges to {edgeListFN}")
+msg(f"Saving Edges to {edgeListFN}")
 df_patches[['FROM_ID','TO_ID','COST']].to_csv(edgeListFN,float_format=("%2.4f"),index=False)
 
 #Write out cost surface arrays
-arcpy.SetProgressor("default", "Stacking arrays")
+msg("Stacking arrays")
 arrStack = np.stack(costDistArrays)
 
-arcpy.SetProgressor("default", "Saving Cost Distance Arrays to {}".format(edgeListFN))
+msg(f"Saving Cost Distance Arrays to {edgeListFN}")
 np.save(edgeListFN.replace("csv","npy"),arrStack)
