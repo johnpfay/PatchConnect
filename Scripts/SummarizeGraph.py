@@ -10,7 +10,7 @@
 #-------------------------------------------------------------------------------------------
 # Updated for Python 3.5 (Spring 2018, John.Fay@duke.edu)
 
-import sys, os, arcpy
+import sys, arcpy
 import networkx as nx
 #import DU_GraphTools99 as gt
 # C:\check\PatchConnect\EdgeList.csv 300000 1500000 300000 C:\check\PatchConnect\GraphSummary.csv
@@ -109,6 +109,7 @@ def graph_comp_sequence(Gts):
    """
    seq = Gts.keys()
    gcs = {}
+   start_diam = -1
    for d in seq:
        #msg("Working on {}".format(d))
        g = Gts[d]
@@ -120,7 +121,11 @@ def graph_comp_sequence(Gts):
            gc = max(nx.connected_component_subgraphs(g), key=len)# nx.connected_component_subgraphs(g)[0]
            diam = x_diameter(gc)
        gcs[d] = (nc, diam)
-       msg("{0}:\tnc={1}\tdiam={2:2.4f}".format(d,nc,diam))
+       if start_diam > diam:
+           msg("{0}:\tnc={1}\tdiam={2:2.4f}***".format(d,nc,diam))
+       else:
+           msg("{0}:\tnc={1}\tdiam={2:2.4f}".format(d,nc,diam))
+       start_diam = diam
        if nc == 1: break
    return gcs
 
@@ -340,7 +345,7 @@ def _dijkstra_multisource(G, sources, weight, pred=None, paths=None,cutoff=None,
     # by the caller via the pred and paths objects passed as arguments.
     return dist
 
-    return _dijkstra(G, source, get_weight, cutoff=cutoff)
+    #return _dijkstra(G, source, get_weight, cutoff=cutoff)
 #--INPUT VARIABLES--
 edgeFile = sys.argv[1]
 minThresh = int(sys.argv[2])
@@ -373,3 +378,14 @@ gcs = graph_comp_sequence(gts)
 msg("Writing data to %s" %outFile)
 write_graph_comp_sequence(gcs,outFile)
 
+#Report distance at max connectivity (when diameter trends down)
+prev_diam = -1
+for k,v in gcs.items():
+      (nc, diam) = v
+
+      #Check whether diameter starts declining
+      if prev_diam > diam:
+          optimal_dist = k
+          msg(f'Optimal diameter is {optimal_dist}')
+      #Update start_diam
+      prev_diam = diam

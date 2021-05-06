@@ -24,8 +24,7 @@
 #---------------------------------------------------------------------------------
 
 # Import system modules
-import sys, string, os, arcpy, math
-import arcpy.sa as sa
+import sys, arcpy, math
 import networkx as nx
 
 # Check out any necessary licenses
@@ -33,16 +32,27 @@ arcpy.CheckOutExtension("spatial")
 arcpy.env.overwriteOutput = True
 
 # Input variables
-patchRaster = sys.argv[1]   
-edgeListFN = sys.argv[2]    
-maxDistance = int(sys.argv[3])   
-k = math.log(0.1) / maxDistance ##Decay coefficient
+debug = False
+if debug:
+    patchRaster = "../Data/ENH_LCP_ModelInputs_Final2019.gdb/S_Patches_60ha"
+    edgeListFN = "../S_guild/edge_list.csv"
+    maxDistance = 1600  
+    k = math.log(0.1) / maxDistance ##Decay coefficient
+else:
+    patchRaster = sys.argv[1]   
+    edgeListFN = sys.argv[2]    
+    maxDistance = int(sys.argv[3])   
+    k = math.log(0.1) / maxDistance ##Decay coefficient
 
 # Output variables
-outputFN = sys.argv[4]   
+if debug:
+    outputFN = "../S_guild/connections.csv" 
+else:
+    outputFN = sys.argv[4]   
+    
 
 ##---FUNCTIONS---
-def msg(txt): print txt; arcpy.AddMessage(txt); return
+def msg(txt): print (txt); arcpy.AddMessage(txt); return
 
 ##---PROCESSES---
 # Create a list of patch IDs and a dictionary of areas
@@ -76,17 +86,17 @@ edgeList.close()
 
 # Calculate degree, betweenness, and closeness centrality - one subgraph at time
 subGs = nx.connected_component_subgraphs(G)
-msg("There graph contains %d subgraph(s)" %len(subGs))
+msg("There graph contains %d subgraph(s)" %sum(1 for _ in subGs))
 dG = {}
 bG = {}
 cG = {}
-for subG in subGs:
+for subG in nx.connected_component_subgraphs(G):
     #msg("Calculating degree centrality...")
     dG.update(nx.centrality.degree_centrality(subG))
     #msg("Calculating betweenness centrality...")
     bG.update(nx.centrality.betweenness_centrality(subG,normalized=True,weight='weight'))
     #msg("Calculating closeness centrality...")
-    cG.update(nx.centrality.closeness_centrality(subG,normalized=True,distance='weight'))
+    cG.update(nx.centrality.closeness_centrality(subG,distance='weight'))
 
 # Create the output file
 msg("Writing outputs to %s" %outputFN)
@@ -103,12 +113,13 @@ for patchID in patchIDs:
     connArea = 0
     idwArea = 0
     # Get the edges connected to the selected node
-    edges = G.edge[patchID]
+    edges = G.edges.data(nbunch=patchID)#G.edge[patchID]
     # Diameter (number of neighbors)
     degree = len(edges)
+    
     # Loop through each connected patch and tabulate area and IDW area
-    for toID in edges.keys():
-        distance = edges[toID]['weight']
+    for (fromID,toID,wt) in edges:
+        distance = wt['weight']
         connArea += patchAreas[toID]
         idwArea += math.exp(k * distance) * patchAreas[toID]
     between = bG[patchID] * 100.0
@@ -122,4 +133,3 @@ for patchID in patchIDs:
 # Close the text file
 connAreaFileObj.close()
 
-arcpy.CheckInExtension("spatial")

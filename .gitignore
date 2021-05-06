@@ -1,2 +1,10 @@
-.ipynb_checkpoints/*
-*.pyc
+#Ignore ArcGIS Logs
+.backups/*
+ImportLog/*
+Index/*
+
+#Ignore Geodatabases
+#PatchConnect.gdb
+
+#
+
