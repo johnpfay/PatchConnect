@@ -168,23 +168,36 @@ for patchID in patchIDs:
 #%% Clean up
 
 #Convert dataframe to spatial dataframe
-if lcp_featureclass:
-    arcpy.SetProgressor("default","Converting features to a spatial dataframe")
-    print("Converting to spatial dataframe")
-    sdf_patches = GeoAccessor.from_df(df_patches, geometry_column='geometry')
+try:
+    if lcp_featureclass:
+        arcpy.SetProgressor("default","Converting features to a spatial dataframe")
+        print("Converting to spatial dataframe")
+        sdf_patches = GeoAccessor.from_df(df_patches, geometry_column='geometry')
+except:
+    msg("Error creating spatial dataframe")
+
     
-    #Save as a feature class
-    arcpy.SetProgressor("default",f"Saving least cost paths to {lcp_featureclass}")
-    print(f"Saving least cost paths to {lcp_featureclass}")
-    sdf_patches.spatial.to_featureclass(lcp_featureclass)
+try:    
+        #Save as a feature class
+        arcpy.SetProgressor("default",f"Saving least cost paths to {lcp_featureclass}")
+        print(f"Saving least cost paths to {lcp_featureclass}")
+        sdf_patches.spatial.to_featureclass(lcp_featureclass)
+except:
+    msg("Error saving least cost paths")
 
 #Write the edges to the edgeListFN
-msg(f"Saving Edges to {edgeListFN}")
-df_patches[['FROM_ID','TO_ID','COST']].to_csv(edgeListFN,float_format=("%2.4f"),index=False)
+try:
+    msg(f"Saving Edges to {edgeListFN}")
+    df_patches[['FROM_ID','TO_ID','COST']].to_csv(edgeListFN,float_format=("%2.4f"),index=False)
+except:
+    msg("Error saving edge to csv")
 
 #Write out cost surface arrays
-msg("Stacking arrays")
-arrStack = np.stack(costDistArrays)
+try:
+    msg("Stacking arrays")
+    arrStack = np.stack(costDistArrays)
 
-msg(f"Saving Cost Distance Arrays to {edgeListFN}")
-np.save(edgeListFN.replace("csv","npy"),arrStack)
+    msg(f"Saving Cost Distance Arrays to {edgeListFN}")
+    np.save(edgeListFN.replace("csv","npy"),arrStack)
+error:
+    msg("Error saving cost stack")
