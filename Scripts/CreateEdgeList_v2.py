@@ -162,7 +162,7 @@ for patchID in patchIDs:
                     'COST': least_cost_distance},ignore_index=True)
             
     #Add arrays to arrLists
-    costDistArrays.append(cd_array)
+    #costDistArrays.append(cd_array)
     arcpy.SetProgressorPosition()
 
 #%% Clean up
@@ -173,11 +173,7 @@ try:
         arcpy.SetProgressor("default","Converting features to a spatial dataframe")
         print("Converting to spatial dataframe")
         sdf_patches = GeoAccessor.from_df(df_patches, geometry_column='geometry')
-except:
-    msg("Error creating spatial dataframe")
-
-    
-try:    
+   
         #Save as a feature class
         arcpy.SetProgressor("default",f"Saving least cost paths to {lcp_featureclass}")
         print(f"Saving least cost paths to {lcp_featureclass}")
@@ -193,11 +189,11 @@ except:
     msg("Error saving edge to csv")
 
 #Write out cost surface arrays
-try:
-    msg("Stacking arrays")
-    arrStack = np.stack(costDistArrays)
+#try:
+#    msg("Stacking arrays")
+#    arrStack = np.stack(costDistArrays)
 
-    msg(f"Saving Cost Distance Arrays to {edgeListFN}")
-    np.save(edgeListFN.replace("csv","npy"),arrStack)
-except:
-    msg("Error saving cost stack")
+#    msg(f"Saving Cost Distance Arrays to {edgeListFN}")
+#    np.save(edgeListFN.replace("csv","npy"),arrStack)
+#except:
+#    msg("Error saving cost stack")
