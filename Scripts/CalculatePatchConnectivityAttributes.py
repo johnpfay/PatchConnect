@@ -76,8 +76,8 @@ headerLine = edgeList.readline()
 dataLine = edgeList.readline()
 while dataLine:
     lineData = dataLine.split(",")
-    u = int(lineData[0])
-    v = int(lineData[1])
+    u = int(float(lineData[0]))
+    v = int(float(lineData[1]))
     w = float(lineData[2][:-1])
     if w <= maxDistance:
         G.add_edge(u,v,weight = w)
@@ -85,12 +85,13 @@ while dataLine:
 edgeList.close()
 
 # Calculate degree, betweenness, and closeness centrality - one subgraph at time
-subGs = nx.connected_component_subgraphs(G)
+subGs = nx.connected_components(G)
 msg("There graph contains %d subgraph(s)" %sum(1 for _ in subGs))
 dG = {}
 bG = {}
 cG = {}
-for subG in nx.connected_component_subgraphs(G):
+for c in nx.connected_components(G):
+    subG = G.subgraph(c)
     #msg("Calculating degree centrality...")
     dG.update(nx.centrality.degree_centrality(subG))
     #msg("Calculating betweenness centrality...")
