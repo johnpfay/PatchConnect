@@ -199,5 +199,5 @@ try:
 
     msg(f"Saving Cost Distance Arrays to {edgeListFN}")
     np.save(edgeListFN.replace("csv","npy"),arrStack)
-error:
+except:
     msg("Error saving cost stack")
