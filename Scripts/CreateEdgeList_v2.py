@@ -1,6 +1,5 @@
 '''
 Create Edge List
-Spring 2021 - John.Fay@duke.edu
 
 This script takes two datasets - a patch raster and a cost raster
 and compute an edge list comprised of the least cost distances 
@@ -10,7 +9,7 @@ Optionally it will also produce a 3D stacked numpy array comprised
 of a layer for each patch (D1) and the least cost distance to
 that patch for each pixel (D2/3)
 
-Spring 2021 - John.Fay@duke.edu
+Spring 2022 - John.Fay@duke.edu
 '''
 
 
@@ -27,19 +26,10 @@ from arcgis import GIS, GeoAccessor, geometry
 gis = GIS('home')
 
 # Get input datasets: Patches and CostSurface
-debug = False
-if debug:
-    orig_patchRaster = '..\\Data\\ENH_LCP_ModelInputs_Final2019.gdb\\S_Patches_60ha'
-    orig_costRaster = '..\\Data\\ENH_LCP_ModelInputs_Final2019.gdb\\S_CostSurface'
-    edgeListFN = '..\\Scratch\\edgelist4.csv'
-    lcp_featureclass = edgeListFN.replace('.csv','.shp')
-    arcpy.env.overwriteOutput = True
-
-else:
-    orig_patchRaster = arcpy.GetParameterAsText(0)
-    orig_costRaster = arcpy.GetParameterAsText(1)
-    edgeListFN = arcpy.GetParameterAsText(2)
-    lcp_featureclass = arcpy.GetParameterAsText(3)
+orig_patchRaster = arcpy.GetParameterAsText(0)
+orig_costRaster = arcpy.GetParameterAsText(1)
+edgeListFN = arcpy.GetParameterAsText(2)
+lcp_featureclass = arcpy.GetParameterAsText(3)
 
 # Subset the cost raster to match dimensions of the patch raster
 arcpy.env.cellSize = orig_patchRaster
@@ -110,7 +100,7 @@ for patchID in patchIDs:
     #Reclassify cost in source patch cells to zero & set no data to high cost
     arrCostMod = arrCost.copy()
     arrCostMod[arrPatch == patchID] = 0
-    #arrCostMod[arrCostMod == -9999] = arrCostMod.max() * 10000
+    arrCostMod[arrCostMod == -9999] =  100000000000
 
     #Create the MCP object (Geometric accounts for diagonals)
     cost_graph = graph.MCP_Geometric(arrCostMod, sampling=(cellSize, cellSize))
@@ -167,20 +157,6 @@ for patchID in patchIDs:
 
 #%% Clean up
 
-#Convert dataframe to spatial dataframe
-try:
-    if lcp_featureclass:
-        arcpy.SetProgressor("default","Converting features to a spatial dataframe")
-        print("Converting to spatial dataframe")
-        sdf_patches = GeoAccessor.from_df(df_patches, geometry_column='geometry')
-   
-        #Save as a feature class
-        arcpy.SetProgressor("default",f"Saving least cost paths to {lcp_featureclass}")
-        print(f"Saving least cost paths to {lcp_featureclass}")
-        sdf_patches.spatial.to_featureclass(lcp_featureclass)
-except:
-    msg("Error saving least cost paths")
-
 #Write the edges to the edgeListFN
 try:
     msg(f"Saving Edges to {edgeListFN}")
@@ -188,12 +164,24 @@ try:
 except:
     msg("Error saving edge to csv")
 
-#Write out cost surface arrays
-#try:
-#    msg("Stacking arrays")
-#    arrStack = np.stack(costDistArrays)
 
-#    msg(f"Saving Cost Distance Arrays to {edgeListFN}")
-#    np.save(edgeListFN.replace("csv","npy"),arrStack)
-#except:
-#    msg("Error saving cost stack")
+#Convert dataframe to spatial dataframe
+try:
+    if lcp_featureclass:
+        arcpy.SetProgressor("default","Converting features to a spatial dataframe")
+        msg("Converting to spatial dataframe")
+        sdf_patches = GeoAccessor.from_df(df_patches,
+                                          geometry_column='geometry',
+                                          sr = 26912)
+
+        #Save as a feature class
+        arcpy.SetProgressor("default",f"Saving least cost paths to {lcp_featureclass}")
+        msg(f"Saving least cost paths to {lcp_featureclass}")
+        sdf_patches.spatial.to_featureclass(
+            location=lcp_featureclass,
+            overwrite = True,
+            has_z = False,
+            has_m = False,
+            sanitize_columns = True)
+except Exception as e:
+    msg("Error saving least cost paths")
