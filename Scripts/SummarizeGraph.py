@@ -118,7 +118,7 @@ def graph_comp_sequence(Gts):
            nc = nx.number_connected_components(g)
            #gc = max(nx.connected_component_subgraphs(g), key=len)# nx.connected_component_subgraphs(g)[0]
            gc_set = sorted(nx.connected_components(g), key=len, reverse=True)
-           gc = G.subgraph(gc_set[0])
+           gc = g.subgraph(gc_set[0])
            diam = x_diameter(gc)
        gcs[d] = (nc, diam)
        if start_diam * 0.9 > diam:

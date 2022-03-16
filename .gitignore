@@ -4,7 +4,8 @@ ImportLog/*
 Index/*
 
 #Ignore Geodatabases
-*.gdb/*
+*.gdb
+
 
 #Scratch
 
