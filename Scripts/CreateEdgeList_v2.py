@@ -100,7 +100,7 @@ for patchID in patchIDs:
     #Reclassify cost in source patch cells to zero & set no data to high cost
     arrCostMod = arrCost.copy()
     arrCostMod[arrPatch == patchID] = 0
-    arrCostMod[arrCostMod == -9999] =  100000000000
+    arrCostMod[arrCostMod == -9999] = 100000000000
 
     #Create the MCP object (Geometric accounts for diagonals)
     cost_graph = graph.MCP_Geometric(arrCostMod, sampling=(cellSize, cellSize))
@@ -115,7 +115,7 @@ for patchID in patchIDs:
     #Process all the to-patches
     for toID in patchIDs:
         if toID > patchID:
-            print(".",end="")
+            arcpy.SetProgressorLabel("Patch {} of {}: {} ".format(step,steps,toID))
             #--Extract the cost distance between patches--
             least_cost_distance = cd_array[arrPatch == toID].min()
             
